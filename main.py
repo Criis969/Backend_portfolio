@@ -7,6 +7,7 @@ from jose import jwt, JWTError
 
 SECRET_KEY = "688904a521337fdf3c68c477c9a497068d6eeac2fb03b411a197a918aa2163b2"
 ALGORITHM = "HS256"
+EXPIRATION_TIME = 2
 
 class Project(BaseModel):
     id: int
@@ -32,7 +33,7 @@ async def authenticate_user(user: UserDB):
         return False
     if not pwd_context.verify(user.password, user_db.password):
         return False
-    expiration = datetime.utcnow() + timedelta(minutes=2)
+    expiration = datetime.utcnow() + timedelta(minutes=EXPIRATION_TIME)
     token = jwt.encode(
         {"sub": user.username, "exp": expiration},
         SECRET_KEY,
@@ -72,3 +73,15 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             headers={"WWW-Authenticate": "Bearer"}
         )
     return user
+
+@app.post("/project")
+async def add_project(project: Project, token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return project
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
