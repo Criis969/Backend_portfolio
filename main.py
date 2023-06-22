@@ -12,7 +12,7 @@ import pydantic
 
 SECRET_KEY = "688904a521337fdf3c68c477c9a497068d6eeac2fb03b411a197a918aa2163b2"
 ALGORITHM = "HS256"
-EXPIRATION_TIME = 2
+EXPIRATION_TIME = 20
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl= "/login")
