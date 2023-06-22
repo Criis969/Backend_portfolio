@@ -19,13 +19,13 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl= "/login")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 pydantic.json.ENCODERS_BY_TYPE[ObjectId]=str
 
-#password @prueba1
-user_db = UserDB(username="admin",password="$2a$12$8nzRR5U.raL.uxMZ.iwxEOHn0RNnRpRt6tOQRyQYRUTr/qXhK1TWa")
+#password @prueba1 $2a$12$8nzRR5U.raL.uxMZ.iwxEOHn0RNnRpRt6tOQRyQYRUTr/qXhK1TWa
 
 async def authenticate_user(user: UserDB):
-    if user.username != user_db.username:
+    user_db = users_collection.find_one({"username": user.username})
+    if not user_db:
         return False
-    if not pwd_context.verify(user.password, user_db.password):
+    if not pwd_context.verify(user.password,user_db["password"]):
         return False
     expiration = datetime.utcnow() + timedelta(minutes=EXPIRATION_TIME)
     token = jwt.encode(
@@ -72,7 +72,15 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 async def add_project(project: Project, token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return project
+        try:
+            projects_collection.insert_one(project.__dict__)
+            return project
+        except:
+            raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Error with database service",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
