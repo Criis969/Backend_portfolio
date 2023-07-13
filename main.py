@@ -9,6 +9,7 @@ from db.models.users import User, UserDB
 from db.models.projects import Project
 from bson.objectid import ObjectId
 import pydantic
+from fastapi.middleware.cors import CORSMiddleware
 
 SECRET_KEY = "688904a521337fdf3c68c477c9a497068d6eeac2fb03b411a197a918aa2163b2"
 ALGORITHM = "HS256"
@@ -38,6 +39,17 @@ async def authenticate_user(user: UserDB):
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:4200"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 async def root():
